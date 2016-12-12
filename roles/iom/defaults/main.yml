@@ -1,0 +1,4 @@
+domain_type: kvm
+images_path: "/var/lib/libvirt/images/vmg/"
+vnf_qcow2: "sros_mg8.0r7.qcow2"
+vnf_version: "MG8.0R7"

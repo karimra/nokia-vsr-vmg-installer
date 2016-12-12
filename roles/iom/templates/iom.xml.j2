@@ -1,0 +1,133 @@
+<domain type='{{ domain_type }}'>
+  <name>{{ name }}</name>
+    {%- if uuid is defined %}
+  <uuid>{{ uuid }}</uuid>
+    {%- endif %}
+  <memory unit='{{ memory.unit }}'>{{ memory.amount }}</memory>
+  <memoryBacking>
+    <hugepages/>
+    <nosharepages/>
+  </memoryBacking>
+  <vcpu placement='static'>{{ vcpu }}</vcpu>
+  <cputune>
+      {%- for cpu in cputune %}
+    <vcpupin vcpu= '{{ cpu.vcpu }}' cpuset='{{ cpu.cpuset }}'/>
+      {%- endfor %}
+  </cputune>
+  <numatune>
+    <memory mode='{{ numatune.mode }}' nodeset='{{ numatune.nodeset }}'/>
+  </numatune>
+  <resource>
+    <partition>/machine</partition>
+  </resource>
+    <sysinfo type='smbios'>
+      <bios>
+        <entry name='vendor'>KVM</entry>
+      </bios>
+      <system>
+        <entry name='manufacturer'>alcatel-lucent.com</entry>
+        <entry name='product'>TiMOS: slot={{ system.slot}} chassis=VSR card={{ system.card}}
+          {%- for m in system.mda -%}
+          {{" mda/"+ loop.index|string }}={{ m }}
+          {%- endfor -%}
+          {%- if interfaces.ofabric is defined -%}
+          {%- for int in interfaces.ofabric -%}
+          {{ " ofabric/"+loop.index|string }}={{ int.vnet }}:{{ int.vlan }}
+          {%- endfor -%}
+          {%- endif -%}
+        </entry>
+      </system>
+    </sysinfo>
+  <os>
+    <type arch='x86_64'>hvm</type>
+    <boot dev='hd'/>
+    <smbios mode='sysinfo'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+  </features>
+  <cpu mode='host-model'>
+    <model fallback='allow'/>
+  </cpu>
+  <clock offset='utc'>
+    <timer name='rtc' tickpolicy='delay'/>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='hpet' present='no'/>
+  </clock>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <pm>
+    <suspend-to-mem enabled='no'/>
+    <suspend-to-disk enabled='no'/>
+  </pm>
+  <devices>
+    <emulator>{{ libvirt.emulator }}</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='none'/>
+      <source file='{{ images_path }}{{ vnf_version }}/{{ name }}.qcow2'/>
+      <target dev='hda' bus='virtio'/>
+    </disk>
+    <controller type='pci' index='0' model='pci-root'/>
+    <controller type='usb' index='0'>
+    </controller>
+    <interface type='{{ interfaces.mgmt.type }}'>
+      <source bridge='{{ interfaces.mgmt.linux_bridge }}'/>
+      <model type='{{ interfaces.mgmt.model_type }}'/>
+    </interface>
+    <interface type='{{ interfaces.control.type }}'>
+      <source bridge='{{ interfaces.control.linux_bridge }}'/>
+      <model type='{{ interfaces.control.model_type }}'/>
+    </interface>
+    '<!--' START 1 Define external interfaces if type is Bridge '-->'
+    {%- if interfaces.external is defined %}
+    {%- for interface in interfaces.external %}
+    {%- if interface.type == "bridge" %}
+    <interface type='{{ interface.type }}'>
+      <source bridge='{{ interface.linux_bridge }}'/>
+      <model type='{{ interface.model_type }}'/>
+    </interface>
+    {%- endif %}
+    {%- endfor %}
+    {%- endif %}
+    '<!--' END 1 Define external interfaces if type is Bridge '-->'
+    '<!--' START 2 Define ofabric interfaces if type is Bridge '-->'
+    {%- if interfaces.ofabric is defined %}
+    {%- for interface in interfaces.ofabric %}
+    {%- if interface.type == "bridge" %}
+    <interface type='{{ interfaces.type }}'>
+      <source bridge='{{ interface.linux_bridge }}'/>
+      <model type='{{ interface.model_type }}'/>
+    </interface>
+    {%- endif %}
+    {%- endfor %}
+    {%- endif %}
+    '<!--' END 2 Define ofabric interfaces if type is Bridge '-->'
+    '<!--' START 3 Define remaining interfaces (ofabric AND external) if they are of type hostdev '-->'
+    {%- if interfaces_pci is defined %}
+    {%- for interface in interfaces_pci %}
+    {%- if interface.type == "hostdev" %}
+    <interface type='{{ interface.type }}' managed='yes'>
+      <source>
+        <address type='pci' domain='0x{{ interface.source.domain }}' bus='0x{{ interface.source.bus }}' slot='0x{{ interface.source.slot }}' function='0x{{ interface.source.function }}'/>
+      </source>
+    {%- if interface.vlan is defined %}
+      <vlan>
+        <tag id='{{ interface.vlan }}'/>
+      </vlan>
+    {%- endif %}
+    </interface>
+    {%- endif %}
+    {%- endfor %}
+    {%- endif %}
+    '<!--' END 3 Define remaining interfaces (ofabric AND external) if type is hostdev '-->'
+    <serial type='pty'>
+      <target port='0'/>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
+  </devices>
+  <seclabel type='none' model='none'/>
+</domain>

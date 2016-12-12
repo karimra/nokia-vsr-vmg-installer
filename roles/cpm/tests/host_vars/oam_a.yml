@@ -1,0 +1,13 @@
+hypervisor: <hypervisor_ip_or_hostname> 
+name: oam_a
+
+system:
+  card: 'cpm-v'
+  slot: 'A'
+  bof:
+    primarycfg: ftp://user:password@ftp_server_ip/sample_config_file.cfg
+    actaddr: 10.1.1.5/24
+    stbaddr: 10.1.1.6/24
+    staticroutes:
+      - 12.13.14.0/24@10.1.1.1
+    licensefile: ftp://user:password@ftp_server_ip/license.lic

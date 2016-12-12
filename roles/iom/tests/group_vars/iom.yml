@@ -1,0 +1,46 @@
+memory:
+  unit: KiB
+  amount: 16000000
+
+vcpu: 8
+cputune:
+  - vcpu: 0
+    cpuset: 2
+  - vcpu: 1
+    cpuset: 3
+  - vcpu: 2
+    cpuset: 4
+  - vcpu: 3
+    cpuset: 5
+  - vcpu: 4
+    cpuset: 6
+  - vcpu: 5
+    cpuset: 7
+  - vcpu: 6
+    cpuset: 8
+  - vcpu: 7
+    cpuset: 9
+
+numatune:
+  mode: preferred
+  nodeset: 0
+
+interfaces:
+  mgmt:
+    type: bridge
+    linux_bridge: br-mgmt
+    model_type: virtio
+
+  control:
+    type: bridge
+    linux_bridge: br-swfct
+    model_type: virtio
+
+  ofabric:
+    - vnet: 5
+      vlan: 212
+      type: hostdev
+
+    - vnet: 6
+      vlan: 213
+      type: hostdev

@@ -1,0 +1,32 @@
+hypervisor: <hypervisor_ip_or_hostname> 
+name: mg_3
+
+system:
+  card: iom-v-mg
+  mda:
+    - isa-ms-v
+  slot: 3
+
+interfaces:
+  mgmt:
+    type: bridge
+    linux_bridge: br-mgmt
+    model_type: virtio
+
+  control:
+    type: bridge
+    linux_bridge: br-control
+    model_type: virtio
+
+  ofabric:
+    - vnet: 2
+      iface_name: enp141s0f0
+      vf_id: 0
+      vlan: 212
+      type: hostdev
+
+    - vnet: 3
+      iface_name: enp141s0f1
+      vf_id: 0
+      vlan: 213
+      type: hostdev

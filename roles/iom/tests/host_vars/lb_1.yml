@@ -1,0 +1,50 @@
+hypervisor: <hypervisor_ip_or_hostname> 
+name: lb_1
+
+system:
+  card: iom-v
+  mda: 
+    - isa-ms-v
+  slot: 1
+
+interfaces:
+  mgmt:
+    type: bridge
+    linux_bridge: br-mgmt
+    model_type: virtio
+
+  control:
+    type: bridge
+    linux_bridge: br-control
+    model_type: virtio
+
+  ofabric:
+    - vnet: 3
+      iface_name: enp140s0f0
+      vf_id: 0
+      vlan: 212
+      type: hostdev
+
+    - vnet: 4
+      iface_name: enp140s0f1
+      vf_id: 0
+      vlan: 213
+      type: hostdev
+
+  external:
+    - vnet: 5
+      iface_name: enp135s0f0
+      vf_id: 0
+      vlan: 1001
+      type: hostdev
+
+    - vnet: 6
+      iface_name: enp135s0f1
+      vf_id: 0
+      vlan: 1002
+      type: hostdev
+
+    - vnet: 2
+      type: bridge
+      linux_bridge: br-sgi
+      model_type: virtio

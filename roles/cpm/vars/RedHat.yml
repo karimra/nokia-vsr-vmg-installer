@@ -1,0 +1,5 @@
+---
+libvirt:
+  emulator: "/usr/libexec/qemu-kvm"
+  user: "qemu"
+  group: "qemu"

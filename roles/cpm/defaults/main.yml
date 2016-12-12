@@ -1,0 +1,3 @@
+domain_type: kvm
+images_path: "/path/to/store/vm/images/"
+vnf_version: "xx.Rx"

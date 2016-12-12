@@ -1,0 +1,53 @@
+- name: Get list of VMs
+  virt: command=list_vms
+  check_mode: no
+  register: virt_vms
+  delegate_to: "{{ hypervisor }}"
+
+- name: Create cf1 cf2 disks if needed
+  command: qemu-img create -f qcow2 {{ images_path }}{{ vnf_version }}/{{ item.name }}-{{ inventory_hostname }}.qcow2 {{ item.size }}
+  args:
+    creates: "{{ images_path }}{{ vnf_version }}/{{ item.name }}-{{ inventory_hostname }}.qcow2"
+  when: (disk is defined) and ( inventory_hostname not in virt_vms.list_vms)
+  with_items: "{{ disk }}"
+  delegate_to: "{{ hypervisor }}"
+
+# Define CPM VM
+- name: Define cpm VM
+  virt: name={{ inventory_hostname }}
+        command=define
+        xml="{{ lookup('template', 'cpm.xml.j2') }}"
+  when: inventory_hostname not in virt_vms.list_vms
+  delegate_to: "{{ hypervisor }}"
+
+# Set cpm as autostart
+- name: Set cpm as autostart VM
+  virt: name={{ inventory_hostname }}
+        command=autostart
+  when: inventory_hostname not in virt_vms.list_vms
+  delegate_to: "{{ hypervisor }}"
+
+- name: Get Guests state
+  virt: command=info
+  register: virt_state
+  delegate_to: "{{ hypervisor }}"
+
+# Start cpm
+- name: Start cpm VM
+  virt: name={{ inventory_hostname }} state=running
+  when: virt_state[inventory_hostname]['state'] != 'running'
+  delegate_to: "{{ hypervisor }}"
+
+# Assert that cpm is running
+- name: Get Guests info
+  virt: command=info
+  register: virt_info
+  delegate_to: "{{ hypervisor }}"
+
+- assert: 
+    that: 
+      - virt_info[inventory_hostname]['state'] == 'running'
+      - virt_info[inventory_hostname]['nrVirtCpu'] == {{ vcpu }}
+      - virt_info[inventory_hostname]['autostart'] == 1
+      - virt_info[inventory_hostname]['maxMem'] == "{{ memory.amount }}"
+  delegate_to: "{{ hypervisor }}"

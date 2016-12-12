@@ -1,0 +1,4 @@
+domain_type: kvm
+images_path: "/path/to/store/vm/images"
+vnf_qcow2: "sros-vm.qcow2"
+vnf_version: "xx.Rx"

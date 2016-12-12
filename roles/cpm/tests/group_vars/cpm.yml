@@ -1,0 +1,37 @@
+memory:
+  unit: KiB
+  amount: 4148224
+
+vcpu: 4
+cputune:
+  - vcpu: 0
+    cpuset: 0
+  - vcpu: 1
+    cpuset: 1
+  - vcpu: 2
+    cpuset: 2
+  - vcpu: 3
+    cpuset: 3
+
+numatune:
+  mode: preferred
+  nodeset: 0
+
+disk:
+  - name: cf1
+    size: 4G
+    dev: hdb
+  - name: cf2
+    size: 4G
+    dev: hdc
+
+interfaces:
+  mgmt:
+    type: bridge
+    linux_bridge: br-mgmt
+    model_type: virtio
+
+  control:
+    type: bridge
+    linux_bridge: br-control
+    model_type: virtio

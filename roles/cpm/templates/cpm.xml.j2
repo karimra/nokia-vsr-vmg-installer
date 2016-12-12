@@ -1,0 +1,89 @@
+<domain type='{{ domain_type }}'>
+  <name>{{ name }}</name>
+    {%- if uuid is defined %}
+  <uuid>{{ uuid }}</uuid>
+    {%- endif %}
+  <memory unit='{{ memory.unit }}'>{{ memory.amount }}</memory>
+  <vcpu placement='static'>{{ vcpu }}</vcpu>
+  <cputune>
+    {%- for cpu in cputune %}
+    <vcpupin vcpu= '{{ cpu.vcpu }}' cpuset='{{ cpu.cpuset }}'/>
+    {%- endfor %}
+  </cputune>
+  <numatune>
+    <memory mode='{{ numatune.mode }}' nodeset='{{ numatune.nodeset }}'/>
+  </numatune>
+  <os>
+    <type arch='x86_64'>hvm</type>
+    <smbios mode='sysinfo'/>
+    <bios useserial='yes'/>
+  </os>
+  <sysinfo type='smbios'>
+      <bios>
+        <entry name='vendor'>KVM</entry>
+      </bios>
+      <system>
+        <entry name='manufacturer'>alcatel-lucent.com</entry>
+        <entry name='product'>TiMOS: slot={{ system.slot }} chassis=VSR card={{ system.card }}
+         {%- if system.bof is defined -%}
+         {%- if system.bof.primarycfg is defined -%}
+         {{ " primary-config="+system.bof.primarycfg }}
+         {%- endif -%}
+         {%- if system.bof.licensefile is defined -%}
+         {{ " license-file="+system.bof.licensefile }}
+         {%- endif -%}
+         {%- if system.bof.actaddr is defined -%}
+         {{ " address="+system.bof.actaddr+"@active" }}
+         {%- endif -%}
+         {%- if system.bof.stbaddr is defined -%}
+         {{ " address="+system.bof.stbaddr+"@standby" }}
+         {%- endif -%}
+         {%- if system.bof.staticroutes is defined -%}
+         {%- for route in system.bof.staticroutes -%}
+         {{  " static-route="+route }}
+         {%- endfor -%}
+         {%- endif -%}
+         {%- endif -%}</entry>
+      </system>
+    </sysinfo>
+  <clock offset='utc'>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='rtc' tickpolicy='delay'/>
+  </clock>
+  <devices>
+    <emulator>{{ libvirt.emulator }}</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='none'/>
+      <source file='{{ images_path }}{{ vnf_version }}/{{ name }}.qcow2'/>
+      <target dev='hda' bus='virtio'/>
+    </disk>
+    {%- if disk is defined %}
+    {%- for cf in disk %}
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='none'/>
+      <source file='{{ images_path }}{{ vnf_version }}/{{ cf["name"] }}-{{ name }}.qcow2'/>
+      <target dev='{{ cf["dev"] }}' bus='virtio'/>
+    </disk>
+    {%- endfor %}
+    {%- endif %}
+    <interface type='{{ interfaces.mgmt.type }}'>
+      <source bridge='{{ interfaces.mgmt.linux_bridge }}'/>
+      <model type='{{ interfaces.mgmt.model_type }}'/>
+    </interface>
+    <interface type='{{ interfaces.control.type }}'>
+      <source bridge='{{ interfaces.control.linux_bridge }}'/>
+      <model type='{{ interfaces.control.model_type }}'/>
+    </interface>
+    <serial type='pty'>
+      <source path='/dev/pts/1'/>
+      <target port='0'/>
+      <alias name='serial0'/>
+    </serial>
+    <console type='pty' tty='/dev/pts/1'>
+      <source path='/dev/pts/1'/>
+      <target type='serial' port='0'/>
+      <alias name='serial0'/>
+    </console>
+  </devices>
+  <seclabel type='none'/>
+</domain>

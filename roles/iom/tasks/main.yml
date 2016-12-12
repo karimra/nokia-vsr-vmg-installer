@@ -1,0 +1,67 @@
+# Define iom VM
+- name: Get a list of VMs
+  virt: command=list_vms
+  register: virt_vms
+  delegate_to: "{{ hypervisor }}"
+
+- name: Pull SR-IOV vf definitions - internal/external interfaces
+  shell: "readlink -f /sys/class/net/{{ item.iface_name }}/device/virtfn{{ item.vf_id }}/ | awk -F '/' '{print $NF}' | sed s/[:.]/_/g"
+  register: nic_pci
+  when: ( item.iface_name is defined ) and ( item.vf_id is defined )
+  with_items:
+    - "{{ interfaces.ofabric|default({}) }}"
+    - "{{ interfaces.external|default({}) }}"
+  delegate_to: "{{ hypervisor }}"
+
+- name: Populate nic_defs
+  set_fact:
+    interfaces_pci: "{{ interfaces_pci|default([]) + [ item.item | combine({'source':{'domain':item.stdout_lines[0].split('_')[0],'bus':item.stdout_lines[0].split('_')[1] ,'slot': item.stdout_lines[0].split('_')[2],'function': item.stdout_lines[0].split('_')[3]}}) ] }}"
+  when: (item.stdout is defined) and (item.stdout_lines != [])
+  with_items: "{{ nic_pci.results }}"
+
+- name: DEBUG - Print out SR-IOV nic definitions
+  debug:
+    msg: "NIC {{ item.iface_name }}, vf {{ item.vf_id }} has pci address pci_{{ item.source.domain }}_{{ item.source.bus }}_{{ item.source.slot }}_{{ item.source.function }}"
+    verbosity: 2
+  with_items:
+    - "{{ interfaces_pci }}"
+
+- name: Define iom VM
+  virt: name={{ inventory_hostname }}
+        command=define
+        xml="{{ lookup('template', 'iom.xml.j2') }}"
+  when: inventory_hostname not in virt_vms.list_vms
+  delegate_to: "{{ hypervisor }}"
+
+# Set iom as autostart
+- name: Set iom as autostart VM
+  virt: name={{ inventory_hostname }}
+        command=autostart
+  when: inventory_hostname not in virt_vms.list_vms
+  delegate_to: "{{ hypervisor }}"
+
+- name: Get Guests state
+  virt: command=info
+  register: virt_state
+  delegate_to: "{{ hypervisor }}"
+
+# Start iom
+- name: Start iom VM
+  virt: name={{ inventory_hostname }} state=running
+  when: virt_state[inventory_hostname]['state'] != 'running'
+  delegate_to: "{{ hypervisor }}"
+
+# Assert that iom is running
+- name: Get Guests info
+  virt: command=info
+  register: virt_info
+  delegate_to: "{{ hypervisor }}"
+
+- assert:
+    that:
+      - virt_info[inventory_hostname]['state'] == 'running'
+      - virt_info[inventory_hostname]['nrVirtCpu'] == {{ vcpu }}
+      - virt_info[inventory_hostname]['autostart'] == 1
+#      - virt_info[inventory_hostname]['maxMem'] == "{{ memory.amount }}"
+  delegate_to: "{{ hypervisor }}"
+
