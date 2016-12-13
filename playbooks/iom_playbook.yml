@@ -1,8 +1,0 @@
-- hosts: iom 
-  gather_facts: False
-
-  pre_tasks:
-    - include: common_playbook.yml
-
-  roles:
-    - { role:  iom }
