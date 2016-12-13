@@ -1,0 +1,3 @@
+---
+- include: cpm_playbook.yml
+- include: iom_playbook.yml
